@@ -10,7 +10,7 @@ LDFLAGS=-Wl,--no-as-needed -lpthread -lrt -lnetio
 
 vpath %.hpp ../netio/include
 
-OBJS=Proxy.o test.o
+OBJS=test.o
 
 TARGET=proxy
 
