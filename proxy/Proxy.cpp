@@ -1,6 +1,7 @@
 
 #include "Proxy.hpp"
 
+
 Proxy::Proxy(uint16_t port, SpLooperPool loopPool) :
     _looperPool(loopPool),
     _server(port, _looperPool)
@@ -22,4 +23,9 @@ void Proxy::stopWork() {
   _server.stopWork();
 }
 
+void Proxy::registerObserver(uint32_t cmd, OnNewMessage& callback) {
+  unique_lock<mutex> lock(_mapMutex);
+
+  _dispatchMap.insert(std::pair<uint32_t, OnNewMessage&>(cmd, callback));
+}
 

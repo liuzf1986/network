@@ -1,33 +1,36 @@
 #pragma once
 
+#include <map>
+#include <mutex>
+
 #include "MultiplexLooper.hpp"
 #include "LooperPool.hpp"
 #include "TcpConnection.hpp"
 #include "TcpServer.hpp"
+#include "FieldLenNetPack.hpp"
 
 
-// This class is proxy that manage tcp read write, by uin number.
+/** This class is proxy that manage tcp read write, by uin number.
+ *  the codec proto is GenFieldLenPack.
+ */
 
 using namespace netio;
 using namespace std;
 
-// NP is netpack protocol.
-template <class NP>
 class Proxy {
   typedef shared_ptr<LooperPool<MultiplexLooper> > SpLooperPool;
   typedef shared_ptr<TcpConnection> SpTcpConnection;
-  typedef decltype(NP::readMessage(*(new SpVecBuffer(nullptr)))) MsgType;
-  typedef function<void(SpTcpConnection, MsgType&)> OnNewMessage;
+  typedef function<void(SpTcpConnection, SpPeerMessage&)> OnNewMessage;
  public:
   // constructors 
-  Proxy (uint16_t port, SpLooperPool loopPool);
-  Proxy (uint16_t port, int threadCount);
+  explicit Proxy (uint16_t port, SpLooperPool loopPool);
+  explicit Proxy (uint16_t port, int threadCount);
 
   // start/stop wrok
   void startWork();
   void stopWork();
 
-  
+  void registerObserver(uint32_t cmd, OnNewMessage& callback);
  private:
   // callback for TcpServer when new connection comes.
   void onNewConnection(int, SpTcpConnection&);
@@ -36,57 +39,40 @@ class Proxy {
   
   SpLooperPool _looperPool;
   TcpServer _server;
+
+  map<uint32_t, OnNewMessage> _dispatchMap;
+  mutable mutex _mapMutex;
 };
 
-template <class NP>
-inline void Proxy<NP>::onNewConnection(int key, SpTcpConnection& connection) {
+inline void Proxy::onNewConnection(int key, SpTcpConnection& connection) {
   
 }
 
-template <class NP>
-inline void Proxy<NP>::onNewData(SpTcpConnection& connection, SpVecBuffer& buffer) {
-  
+inline void Proxy::onNewData(SpTcpConnection& connection, SpVecBuffer& buffer) {
+  SpPeerMessage message = GenFieldLenPack::readMessage(buffer);
+
+  int _predMsgLen = 100;
+
+  // buffer not contain complete message
+  if(nullptr == message) {
+    if((0 == buffer->readableSize()) && (buffer->writtableSize() < _predMsgLen)) {
+      buffer.reset(new VecBuffer(_predMsgLen));
+    } else {
+      ssize_t expect = GenFieldLenPack::peekMessageLen(buffer);
+      if(expect < 0) {
+        expect = _predMsgLen;
+      }
+
+      buffer->ensure(expect);
+    }
+  } else {
+    // if we have parse and generate a new message, dispatch it.
+    map<uint32_t, OnNewMessage>::const_iterator iter = _dispatchMap.find(message->_info._cmd);
+    if(iter != _dispatchMap.end()) {
+      (*iter).second(connection, message);
+    }
+  }
 }
-
-template <class NP>
-Proxy<NP>::Proxy(uint16_t port, SpLooperPool loopPool) :
-    _looperPool(loopPool),
-    _server(port, _looperPool)
-{
-  _server.setNewConnectionHandler(std::bind(&Proxy::onNewConnection, this, std::placeholders::_1, std::placeholders::_2));
-  _server.setNewMessageHandler(std::bind(&Proxy::onNewData, this, std::placeholders::_1, std::placeholders::_2));
-}
-
-template <class NP>
-Proxy<NP>::Proxy(uint16_t port, int threadCount) :
-    _looperPool(new LooperPool<MultiplexLooper>(threadCount)),
-    _server(port, _looperPool)
-{}
-
-template <class NP>
-void Proxy<NP>::startWork() {
-  _server.startWork();
-}
-
-template <class NP>
-void Proxy<NP>::stopWork() {
-  _server.stopWork();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

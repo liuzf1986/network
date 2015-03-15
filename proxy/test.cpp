@@ -1,10 +1,36 @@
 
-#include "Proxy.hpp"
+#include <stdio.h>
+#include <time.h>
 
-class np {};
+
+#include "Proxy.hpp"
+#include "InetSock.hpp"
+
+#include "Dispatcher.hpp"
+
 
 int main(int argc, char *argv[])
 {
-  Proxy<np> proxy(10, 20);
+  Dispatcher<int> dispatcher;
+
+  
   return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
