@@ -10,12 +10,17 @@ LDFLAGS=-Wl,--no-as-needed -lpthread -lrt -lnetio
 
 vpath %.hpp ../netio/include
 
-OBJS=test.o 
+OBJS=Proxy.o 
 
-TARGET=proxy
+SRVOBJS=Proxy.o
+CLIOBJS=Client.o
 
-$(TARGET):$(OBJS) $(LIB)
-	$(CC) -o $(TARGET) $(OBJS) -L $(LIBDIR) $(LDFLAGS) 
+SRVTRG=proxy
+CLITRG=client
+
+$(SRVTRG) $(CLITRG):$(SRVOBJS) $(CLIOBJS) $(LIB)
+	$(CC) -o $(SRVTRG) $(SRVOBJS) -L $(LIBDIR) $(LDFLAGS) 
+	$(CC) -o $(CLITRG) $(CLIOBJS) -L $(LIBDIR) $(LDFLAGS)
 
 $(LIB):
 	make -C $(LIBDIR)
@@ -40,7 +45,8 @@ $(LIB):
 
 -include $(LIBOBJS:.o=.d)
 
+
 .PHONY:clean
 clean:
-	rm -f $(TARGET) $(OBJS) $(OBJS:.o=.d) core *.log
+	rm -f $(SRVTRG) $(CLITRG) $(SRVOBJS) $(CLIOBJS) $(CLIOBJS:.o=.d) $(SRVOBJS:.o=.d) core *.log
 	make -C $(LIBDIR) clean

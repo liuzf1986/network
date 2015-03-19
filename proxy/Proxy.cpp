@@ -1,31 +1,34 @@
 
-#include "Proxy.hpp"
+#include <stdio.h>
+#include <time.h>
 
 
-Proxy::Proxy(uint16_t port, SpLooperPool loopPool) :
-    _looperPool(loopPool),
-    _server(port, _looperPool)
+#include "InetSock.hpp"
+#include "TcpProxy.hpp"
+#include "MultiplexLooper.hpp"
+#include "LooperPool.hpp"
+
+#include "Dispatcher.hpp"
+#include "FieldLenNetPack.hpp"
+
+using namespace netio;
+
+int main(int argc, char *argv[])
 {
-  _server.setNewConnectionHandler(std::bind(&Proxy::onNewConnection, this, std::placeholders::_1, std::placeholders::_2));
-  _server.setNewMessageHandler(std::bind(&Proxy::onNewData, this, std::placeholders::_1, std::placeholders::_2));
+  shared_ptr<LooperPool<MultiplexLooper> > loopers(new LooperPool<MultiplexLooper>(5));
+  TcpProxy<FieldLenNetpack<GenericLenFieldHeader> > proxy(loopers, static_cast<uint16_t>(3002), static_cast<uint16_t>(8550));
+
+  sleep(10);
+  
+  return 0;
 }
 
-Proxy::Proxy(uint16_t port, int threadCount) :
-    _looperPool(new LooperPool<MultiplexLooper>(threadCount)),
-    _server(port, _looperPool)
-{}
 
-void Proxy::startWork() {
-  _server.startWork();
-}
 
-void Proxy::stopWork() {
-  _server.stopWork();
-}
 
-void Proxy::registerObserver(uint32_t cmd, OnNewMessage& callback) {
-  unique_lock<mutex> lock(_mapMutex);
 
-  _dispatchMap.insert(std::pair<uint32_t, OnNewMessage&>(cmd, callback));
-}
+
+
+
+
 
