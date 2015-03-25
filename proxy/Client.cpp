@@ -8,7 +8,6 @@
 using namespace netio;
 using namespace std;
 
-typedef shared_ptr<TcpConnection> SpTcpConnection;
 MultiplexLooper looper;
 InetAddr remoteAddr("127.0.0.1", 3002);
 

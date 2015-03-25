@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
   TcpProxy<FieldLenNetpack<GenericLenFieldHeader> > proxy(loopers, static_cast<uint16_t>(3002), static_cast<uint16_t>(8550));
 
   sleep(10);
-  
+
   return 0;
 }
 
