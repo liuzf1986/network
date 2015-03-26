@@ -4,7 +4,7 @@
 #include <sys/time.h>
 
 #include "InetSock.hpp"
-#include "TcpProxy.hpp"
+//#include "TcpProxy.hpp"
 #include "MultiplexLooper.hpp"
 #include "LooperPool.hpp"
 
@@ -14,7 +14,10 @@
 #include "HashedWheelTimer.hpp"
 #include "TimerWrap.hpp"
 
+#include "UserSession.hpp"
+
 using namespace netio;
+
 
 void foo() {
   COGFUNC();
@@ -32,6 +35,12 @@ int main(int argc, char *argv[])
     //  COGI("tick i = %d", i);
     //timer.tick();
   }
+
+  SessionMap<TcpUserSession> sessMap;
+
+  SpTcpConnection spConn;
+
+  sessMap.createSession(200, 1, spConn);
 
   shared_ptr<LooperPool<MultiplexLooper> > loopers(new LooperPool<MultiplexLooper>(5));
   //  TcpProxy<FieldLenNetpack<GenericLenFieldHeader> > proxy(loopers, static_cast<uint16_t>(3002), static_cast<uint16_t>(8550));
