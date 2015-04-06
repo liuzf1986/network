@@ -55,7 +55,7 @@ struct PMInfo {
   PMInfo(){}
   
   PMProto _proto;
-  uint32_t _version;  
+  uint32_t _version;
   uint32_t _cmd;
   uint32_t _seq;
 };

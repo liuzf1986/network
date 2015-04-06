@@ -9,12 +9,15 @@
 #include "LooperPool.hpp"
 
 #include "Dispatcher.hpp"
+#include "NetPackDispatcher.hpp"
 #include "FieldLenNetPack.hpp"
 
 #include "HashedWheelTimer.hpp"
 #include "TimerWrap.hpp"
 
-#include "UserSession.hpp"
+#include "TcpConnection.hpp"
+
+//#include "UserSession.hpp"
 
 using namespace netio;
 
@@ -36,19 +39,23 @@ int main(int argc, char *argv[])
     //timer.tick();
   }
 
-  SessionMap<TcpUserSession> sessMap;
+  //  SessionMap<TcpUserSession> sessMap;
 
-  SpTcpConnection spConn;
+  //  SpTcpConnection spConn;
 
-  sessMap.createSession(200, 1, spConn);
+  //  sessMap.createSession(200, 1, spConn);
 
   shared_ptr<LooperPool<MultiplexLooper> > loopers(new LooperPool<MultiplexLooper>(5));
   //  TcpProxy<FieldLenNetpack<GenericLenFieldHeader> > proxy(loopers, static_cast<uint16_t>(3002), static_cast<uint16_t>(8550));
   TimerWrap<HashedWheelTimer> timerWrapper(loopers->getLooper(), 100, 5);
   timerWrapper.attach();
 
-  TcpDispatcher<FieldLenNetpack<GenericLenFieldHeader>> dispatcher(loopers, static_cast<uint16_t>(3002));
-  dispatcher.startWork();
+  //  TcpDispatcher<FieldLenNetpack<GenericLenFieldHeader>> dispatcher(loopers, static_cast<uint16_t>(3002));
+  //  dispatcher.startWork();
+
+
+  NetPackDispatcher<FLNPack, TcpConnection> dispatcher;
+  
 
   struct timeval tv;
   gettimeofday(&tv, NULL);

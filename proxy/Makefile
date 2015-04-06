@@ -3,7 +3,7 @@ CC=g++
 
 LIBDIR=../netio
 LIB=$(LIBDIR)/libnetio.a
-LIBINC=-I$(LIBDIR)/include -I../pmsg
+LIBINC=-I$(LIBDIR)/include
 CFLAGS =-c -O3 $(LIBINC)
 CCFLAGS=-c -std=c++11 -O3 $(LIBINC)
 LDFLAGS=-Wl,--no-as-needed -lpthread -lrt -lnetio
