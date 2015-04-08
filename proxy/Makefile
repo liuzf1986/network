@@ -12,7 +12,7 @@ vpath %.hpp ../netio/include
 
 OBJS=Proxy.o 
 
-SRVOBJS=Proxy.o
+SRVOBJS=Proxy.o main.o
 CLIOBJS=
 
 SRVTRG=proxy

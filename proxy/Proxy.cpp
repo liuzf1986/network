@@ -1,83 +1,37 @@
+#include <functional>
 
-#include <stdio.h>
-#include <time.h>
-#include <sys/time.h>
-
-#include "InetSock.hpp"
-//#include "TcpProxy.hpp"
-#include "MultiplexLooper.hpp"
-#include "LooperPool.hpp"
-
-#include "Dispatcher.hpp"
-#include "NetPackDispatcher.hpp"
-#include "FieldLenNetPack.hpp"
-
-#include "HashedWheelTimer.hpp"
-#include "TimerWrap.hpp"
-
-#include "TcpConnection.hpp"
-
-//#include "UserSession.hpp"
+#include "Proxy.hpp"
 
 using namespace netio;
+using namespace std;
 
-
-void foo() {
-  COGFUNC();
-}
-
-int main(int argc, char *argv[])
+TcpProxy::TcpProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expired) :
+    _loopPool(loopers),
+    _server(lport, _loopPool), 
+    _dispatcher(),
+    _sm(),
+    _timer(_loopPool->getLooper(), 100, TimerInterval / TimerInterval)
 {
-  HashedWheelTimer timer(100, 5);
-
-  function<void()> func = foo;
-
-  //  SpHashedWheelTimeout timeout = timer.addTimeout(func, 2000);
-
-  for(int i = 0; i < 100; i++) {
-    //  COGI("tick i = %d", i);
-    //timer.tick();
-  }
-
-  //  SessionMap<TcpUserSession> sessMap;
-
-  //  SpTcpConnection spConn;
-
-  //  sessMap.createSession(200, 1, spConn);
-
-  shared_ptr<LooperPool<MultiplexLooper> > loopers(new LooperPool<MultiplexLooper>(5));
-  //  TcpProxy<FieldLenNetpack<GenericLenFieldHeader> > proxy(loopers, static_cast<uint16_t>(3002), static_cast<uint16_t>(8550));
-  TimerWrap<HashedWheelTimer> timerWrapper(loopers->getLooper(), 100, 5);
-  timerWrapper.attach();
-
-  //  TcpDispatcher<FieldLenNetpack<GenericLenFieldHeader>> dispatcher(loopers, static_cast<uint16_t>(3002));
-  //  dispatcher.startWork();
-
-
-  NetPackDispatcher<FLNPack, TcpConnection> dispatcher;
-  
-
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-
-  
-  
-  timerWrapper.addTimeout(func, 5000); 
-  
-  
-
-  sleep(10);
-  timerWrapper.detach();
-  
-  return 0;
+  _server.setNewConnectionHandler(std::bind(&TcpProxy::onNewConnection, this, std::placeholders::_1, std::placeholders::_2));
 }
 
+TcpProxy::TcpProxy(size_t threadCount, uint16_t lport, uint32_t expired) :
+    _loopPool(new LooperPool<MultiplexLooper>(threadCount)),
+    _server(lport, _loopPool),
+    _dispatcher(),
+    _sm(),
+    _timer(_loopPool->getLooper(), 100, TimerInterval / TimerInterval)  
+{
+  _server.setNewConnectionHandler(std::bind(&TcpProxy::onNewConnection, this, std::placeholders::_1, std::placeholders::_2));
+}
 
+void TcpProxy::startWork() {
+  //   timerWrapper.addTimeout(func, 5000);
+  _server.startWork();
+}
 
-
-
-
-
-
+void TcpProxy::stopWork() {
+  _server.stopWork();
+}
 
 
