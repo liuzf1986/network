@@ -6,14 +6,15 @@ LIB=$(LIBDIR)/libnetio.a
 LIBINC=-I$(LIBDIR)/include
 CFLAGS =-c -O3 $(LIBINC)
 CCFLAGS=-c -std=c++11 -O3 $(LIBINC)
-LDFLAGS=-Wl,--no-as-needed -lpthread -lrt -lnetio
+#LDFLAGS=-Wl,--no-as-needed -lpthread -lrt -lnetio
+LDFLAGS=-pthread -lrt -lnetio
 
 vpath %.hpp ../netio/include
 
 OBJS=Proxy.o 
 
 SRVOBJS=Proxy.o main.o
-CLIOBJS=Client.o
+CLIOBJS=Client.o ClientTest.o
 
 SRVTRG=proxy
 CLITRG=client

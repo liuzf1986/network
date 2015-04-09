@@ -11,6 +11,7 @@
 #include "Session.hpp"
 #include "TimerWrap.hpp"
 #include "HashedWheelTimer.hpp"
+#include "Logger.hpp"
 
 using namespace netio;
 using namespace std;
@@ -29,6 +30,7 @@ class TcpProxy {
   
  private:
   void onNewConnection(int connId, SpTcpConnection& connection) {
+    COGI("TcpProxy connection establish, remoteaddr=%s ", connection->getPeerAddr().strIpPort().c_str());
     connection->setNewMessageHandler(std::bind(&TcpDispatcher::dispatch, &_dispatcher, std::placeholders::_1, std::placeholders::_2));
     connection->attach();
   }
