@@ -1,10 +1,35 @@
 
 #include <functional>
-#include "TcpConnection.hpp"
-#include "TcpConnector.hpp"
-#include "Logger.hpp"
-#include "FieldLenNetPack.hpp"
 
+#include "Client.hpp"
+#include "Logger.hpp"
+
+using namespace netio;
+using namespace std;
+
+TcpClient::TcpClient(const char* rip, uint16_t rport, uint16_t lport) :
+    _looper(),
+    _connector(&_looper, lport, InetAddr(rip, rport)),
+    _dispatcher()
+{}
+
+void TcpClient::startWork() {
+  _connector.setNewConnCallback(std::bind(&TcpClient::onNewConnection, this, std::placeholders::_1, std::placeholders::_2));
+  _connector.attach();
+  _looper.stopLoop();
+
+  _connector.connect();
+}
+
+void TcpClient::stopWork() {
+  _looper.stopLoop();
+}
+
+void TcpClient::onNewConnection(int fd, const netio::InetAddr &addr) {
+  COGFUNC();
+}
+
+#if 0
 using namespace netio;
 using namespace std;
 
@@ -43,20 +68,5 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif
 

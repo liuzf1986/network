@@ -13,14 +13,14 @@ vpath %.hpp ../netio/include
 OBJS=Proxy.o 
 
 SRVOBJS=Proxy.o main.o
-CLIOBJS=
+CLIOBJS=Client.o
 
 SRVTRG=proxy
 CLITRG=client
 
 $(SRVTRG) $(CLITRG):$(SRVOBJS) $(CLIOBJS) $(LIB)
 	$(CC) -o $(SRVTRG) $(SRVOBJS) -L $(LIBDIR) $(LDFLAGS) 
-#	$(CC) -o $(CLITRG) $(CLIOBJS) -L $(LIBDIR) $(LDFLAGS)
+	$(CC) -o $(CLITRG) $(CLIOBJS) -L $(LIBDIR) $(LDFLAGS)
 
 $(LIB):
 	make -C $(LIBDIR)

@@ -10,7 +10,7 @@ TcpProxy::TcpProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expired
     _server(lport, _loopPool), 
     _dispatcher(),
     _sm(),
-    _timer(_loopPool->getLooper(), 100, TimerInterval / TimerInterval)
+    _timer(_loopPool->getLooper(), 100, expired / TimerInterval)
 {
   _server.setNewConnectionHandler(std::bind(&TcpProxy::onNewConnection, this, std::placeholders::_1, std::placeholders::_2));
 }
@@ -20,7 +20,7 @@ TcpProxy::TcpProxy(size_t threadCount, uint16_t lport, uint32_t expired) :
     _server(lport, _loopPool),
     _dispatcher(),
     _sm(),
-    _timer(_loopPool->getLooper(), 100, TimerInterval / TimerInterval)  
+    _timer(_loopPool->getLooper(), 100, expired / TimerInterval)  
 {
   _server.setNewConnectionHandler(std::bind(&TcpProxy::onNewConnection, this, std::placeholders::_1, std::placeholders::_2));
 }

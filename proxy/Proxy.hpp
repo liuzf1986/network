@@ -20,6 +20,7 @@ class TcpProxy {
   typedef NetPackDispatcher<FLNPack, TcpConnection> TcpDispatcher;
   enum { TimerInterval = 100 };
  public:
+  
   TcpProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expired);
   TcpProxy(size_t threadCount, uint16_t lport, uint32_t expired);
 
