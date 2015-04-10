@@ -13,8 +13,8 @@ vpath %.hpp ../netio/include
 
 OBJS=Proxy.o 
 
-SRVOBJS=Proxy.o main.o
-CLIOBJS=Client.o ClientTest.o
+SRVOBJS=Proxy.o
+CLIOBJS=Client.o
 
 SRVTRG=proxy
 CLITRG=client

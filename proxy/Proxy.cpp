@@ -1,37 +1,41 @@
-#include <functional>
+
 
 #include "Proxy.hpp"
+#include "Daemon.hpp"
 
-using namespace netio;
-using namespace std;
+static Daemon* gDaemon;
+static TcpProxy* gTcpProxy;;
 
-TcpProxy::TcpProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expired) :
-    _loopPool(loopers),
-    _server(lport, _loopPool), 
-    _dispatcher(),
-    _sm(),
-    _timer(_loopPool->getLooper(), 100, expired / TimerInterval)
+void onTerminate(int signo) {
+  gTcpProxy->stopWork();
+  gDaemon->stopWork();
+}
+
+int main(int argc, char *argv[])
 {
-  _server.setNewConnectionHandler(std::bind(&TcpProxy::onNewConnection, this, std::placeholders::_1, std::placeholders::_2));
+  gDaemon = new Daemon();
+  gTcpProxy = new TcpProxy(5, 3002, 150 * 1000);
+  gDaemon->init(onTerminate);
+  
+  gTcpProxy->startWork();
+  gDaemon->startWork();
+  return 0;
 }
 
-TcpProxy::TcpProxy(size_t threadCount, uint16_t lport, uint32_t expired) :
-    _loopPool(new LooperPool<MultiplexLooper>(threadCount)),
-    _server(lport, _loopPool),
-    _dispatcher(),
-    _sm(),
-    _timer(_loopPool->getLooper(), 100, expired / TimerInterval)  
-{
-  _server.setNewConnectionHandler(std::bind(&TcpProxy::onNewConnection, this, std::placeholders::_1, std::placeholders::_2));
-}
 
-void TcpProxy::startWork() {
-  //   timerWrapper.addTimeout(func, 5000);
-  _server.startWork();
-}
 
-void TcpProxy::stopWork() {
-  _server.stopWork();
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
