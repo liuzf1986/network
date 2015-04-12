@@ -4,12 +4,15 @@
 #include "TcpProxy.hpp"
 #include "Daemon.hpp"
 #include "UdpEndpoint.hpp"
+#include "Logger.hpp"
 
 
 static Daemon* gDaemon;
-static TcpProxy* gTcpProxy;;
+static TcpProxy* gTcpProxy;
+
 
 void onTerminate(int signo) {
+  FOGW("\nServer terminate , signo=%d", signo);
   gTcpProxy->stopWork();
   gDaemon->stopWork();
 }
