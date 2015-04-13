@@ -10,6 +10,16 @@
 static Daemon* gDaemon;
 static TcpProxy* gTcpProxy;
 
+// class LJProxy : public TcpProxy {
+//   LJProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expired) :
+//       TcpProxy(loopers, lport, expired),
+//   {
+    
+//   }
+//   void heartbeatHandler() {
+    
+//   }
+// };
 
 void onTerminate(int signo) {
   FOGW("\nServer terminate , signo=%d", signo);
@@ -32,21 +42,4 @@ int main(int argc, char *argv[])
   gDaemon->startWork();
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

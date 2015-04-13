@@ -1,0 +1,18 @@
+package account;
+
+message BaseReq {
+  required uint32 accId = 2;  
+  required bytes sesKey = 1;
+}
+
+
+
+// EPROTO_MSG_PING_REQ
+message PingRequest {
+  required BaseReq baseReq = 1;
+}
+
+// EPROTO_MSG_PING_RSP
+message PongResponse {
+  
+}
