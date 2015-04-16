@@ -29,7 +29,7 @@ class TcpPushProxy : public TcpProxy {
                               std::placeholders::_2));    
   }
  private:
-  void sessionHandler(SpPeerMessage& msg, SpTcpConnection& src) {
+  void sessionHandler(SpPeerMessage& msg, TcpSource& src) {
     COGI(" ============ ");
     COGI("msg proto=%d versoin=%d seq=%d, cmd=%d, content=%s", msg->_proto, msg->_version, msg->_seq, msg->_cmd, msg->_buffer->readablePtr());
     COGI(" ============ ");
