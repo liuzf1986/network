@@ -3,18 +3,16 @@ CC=g++
 
 LIBDIR=../netio
 LIB=$(LIBDIR)/libnetio.a
-LIBINC=-I$(LIBDIR)/include -I$(LIBDIR)/netpack
+LIBINC=-I$(LIBDIR)/include -I$(LIBDIR)/netpack -Iprotocol
 CFLAGS =-c -O3 $(LIBINC)
 CCFLAGS=-c -std=c++11 -O3 $(LIBINC)
 #LDFLAGS=-Wl,--no-as-needed -lpthread -lrt -lnetio
-LDFLAGS=-pthread -lrt -lnetio
+LDFLAGS=-lprotobuf -pthread -lrt -lnetio
 
 vpath %.hpp ../netio/include
 
-OBJS=Proxy.o 
-
-SRVOBJS=Proxy.o
-CLIOBJS=Client.o
+SRVOBJS=Proxy.o common.pb.o
+CLIOBJS=Client.o common.pb.o
 
 SRVTRG=proxy
 CLITRG=client

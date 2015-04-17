@@ -2,7 +2,7 @@ package account;
 
 message BaseReq {
   required uint32 accId = 2;  
-  required bytes sesKey = 1;
+  required uint32 sesKey = 1;
 }
 
 

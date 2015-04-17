@@ -92,18 +92,6 @@ class BaseReq : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required bytes sesKey = 1;
-  inline bool has_seskey() const;
-  inline void clear_seskey();
-  static const int kSesKeyFieldNumber = 1;
-  inline const ::std::string& seskey() const;
-  inline void set_seskey(const ::std::string& value);
-  inline void set_seskey(const char* value);
-  inline void set_seskey(const void* value, size_t size);
-  inline ::std::string* mutable_seskey();
-  inline ::std::string* release_seskey();
-  inline void set_allocated_seskey(::std::string* seskey);
-
   // required uint32 accId = 2;
   inline bool has_accid() const;
   inline void clear_accid();
@@ -111,19 +99,26 @@ class BaseReq : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 accid() const;
   inline void set_accid(::google::protobuf::uint32 value);
 
+  // required uint32 sesKey = 1;
+  inline bool has_seskey() const;
+  inline void clear_seskey();
+  static const int kSesKeyFieldNumber = 1;
+  inline ::google::protobuf::uint32 seskey() const;
+  inline void set_seskey(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:account.BaseReq)
  private:
-  inline void set_has_seskey();
-  inline void clear_has_seskey();
   inline void set_has_accid();
   inline void clear_has_accid();
+  inline void set_has_seskey();
+  inline void clear_has_seskey();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
-  ::std::string* seskey_;
   ::google::protobuf::uint32 accid_;
+  ::google::protobuf::uint32 seskey_;
   friend void  protobuf_AddDesc_common_2eproto();
   friend void protobuf_AssignDesc_common_2eproto();
   friend void protobuf_ShutdownFile_common_2eproto();
@@ -288,91 +283,15 @@ class PongResponse : public ::google::protobuf::Message {
 
 // BaseReq
 
-// required bytes sesKey = 1;
-inline bool BaseReq::has_seskey() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void BaseReq::set_has_seskey() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void BaseReq::clear_has_seskey() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void BaseReq::clear_seskey() {
-  if (seskey_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    seskey_->clear();
-  }
-  clear_has_seskey();
-}
-inline const ::std::string& BaseReq::seskey() const {
-  // @@protoc_insertion_point(field_get:account.BaseReq.sesKey)
-  return *seskey_;
-}
-inline void BaseReq::set_seskey(const ::std::string& value) {
-  set_has_seskey();
-  if (seskey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    seskey_ = new ::std::string;
-  }
-  seskey_->assign(value);
-  // @@protoc_insertion_point(field_set:account.BaseReq.sesKey)
-}
-inline void BaseReq::set_seskey(const char* value) {
-  set_has_seskey();
-  if (seskey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    seskey_ = new ::std::string;
-  }
-  seskey_->assign(value);
-  // @@protoc_insertion_point(field_set_char:account.BaseReq.sesKey)
-}
-inline void BaseReq::set_seskey(const void* value, size_t size) {
-  set_has_seskey();
-  if (seskey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    seskey_ = new ::std::string;
-  }
-  seskey_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:account.BaseReq.sesKey)
-}
-inline ::std::string* BaseReq::mutable_seskey() {
-  set_has_seskey();
-  if (seskey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    seskey_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:account.BaseReq.sesKey)
-  return seskey_;
-}
-inline ::std::string* BaseReq::release_seskey() {
-  clear_has_seskey();
-  if (seskey_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = seskey_;
-    seskey_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void BaseReq::set_allocated_seskey(::std::string* seskey) {
-  if (seskey_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete seskey_;
-  }
-  if (seskey) {
-    set_has_seskey();
-    seskey_ = seskey;
-  } else {
-    clear_has_seskey();
-    seskey_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:account.BaseReq.sesKey)
-}
-
 // required uint32 accId = 2;
 inline bool BaseReq::has_accid() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
+  return (_has_bits_[0] & 0x00000001u) != 0;
 }
 inline void BaseReq::set_has_accid() {
-  _has_bits_[0] |= 0x00000002u;
+  _has_bits_[0] |= 0x00000001u;
 }
 inline void BaseReq::clear_has_accid() {
-  _has_bits_[0] &= ~0x00000002u;
+  _has_bits_[0] &= ~0x00000001u;
 }
 inline void BaseReq::clear_accid() {
   accid_ = 0u;
@@ -386,6 +305,30 @@ inline void BaseReq::set_accid(::google::protobuf::uint32 value) {
   set_has_accid();
   accid_ = value;
   // @@protoc_insertion_point(field_set:account.BaseReq.accId)
+}
+
+// required uint32 sesKey = 1;
+inline bool BaseReq::has_seskey() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void BaseReq::set_has_seskey() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void BaseReq::clear_has_seskey() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void BaseReq::clear_seskey() {
+  seskey_ = 0u;
+  clear_has_seskey();
+}
+inline ::google::protobuf::uint32 BaseReq::seskey() const {
+  // @@protoc_insertion_point(field_get:account.BaseReq.sesKey)
+  return seskey_;
+}
+inline void BaseReq::set_seskey(::google::protobuf::uint32 value) {
+  set_has_seskey();
+  seskey_ = value;
+  // @@protoc_insertion_point(field_set:account.BaseReq.sesKey)
 }
 
 // -------------------------------------------------------------------

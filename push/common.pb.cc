@@ -41,8 +41,8 @@ void protobuf_AssignDesc_common_2eproto() {
   GOOGLE_CHECK(file != NULL);
   BaseReq_descriptor_ = file->message_type(0);
   static const int BaseReq_offsets_[2] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BaseReq, seskey_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BaseReq, accid_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BaseReq, seskey_),
   };
   BaseReq_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -122,8 +122,8 @@ void protobuf_AddDesc_common_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014common.proto\022\007account\"(\n\007BaseReq\022\016\n\006se"
-    "sKey\030\001 \002(\014\022\r\n\005accId\030\002 \002(\r\"0\n\013PingRequest"
+    "\n\014common.proto\022\007account\"(\n\007BaseReq\022\r\n\005ac"
+    "cId\030\002 \002(\r\022\016\n\006sesKey\030\001 \002(\r\"0\n\013PingRequest"
     "\022!\n\007baseReq\030\001 \002(\0132\020.account.BaseReq\"\016\n\014P"
     "ongResponse", 131);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
@@ -147,8 +147,8 @@ struct StaticDescriptorInitializer_common_2eproto {
 // ===================================================================
 
 #ifndef _MSC_VER
-const int BaseReq::kSesKeyFieldNumber;
 const int BaseReq::kAccIdFieldNumber;
+const int BaseReq::kSesKeyFieldNumber;
 #endif  // !_MSC_VER
 
 BaseReq::BaseReq()
@@ -168,10 +168,9 @@ BaseReq::BaseReq(const BaseReq& from)
 }
 
 void BaseReq::SharedCtor() {
-  ::google::protobuf::internal::GetEmptyString();
   _cached_size_ = 0;
-  seskey_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   accid_ = 0u;
+  seskey_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -181,9 +180,6 @@ BaseReq::~BaseReq() {
 }
 
 void BaseReq::SharedDtor() {
-  if (seskey_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete seskey_;
-  }
   if (this != default_instance_) {
   }
 }
@@ -210,14 +206,21 @@ BaseReq* BaseReq::New() const {
 }
 
 void BaseReq::Clear() {
-  if (_has_bits_[0 / 32] & 3) {
-    if (has_seskey()) {
-      if (seskey_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-        seskey_->clear();
-      }
-    }
-    accid_ = 0u;
-  }
+#define OFFSET_OF_FIELD_(f) (reinterpret_cast<char*>(      \
+  &reinterpret_cast<BaseReq*>(16)->f) - \
+   reinterpret_cast<char*>(16))
+
+#define ZR_(first, last) do {                              \
+    size_t f = OFFSET_OF_FIELD_(first);                    \
+    size_t n = OFFSET_OF_FIELD_(last) - f + sizeof(last);  \
+    ::memset(&first, 0, n);                                \
+  } while (0)
+
+  ZR_(accid_, seskey_);
+
+#undef OFFSET_OF_FIELD_
+#undef ZR_
+
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
 }
@@ -232,11 +235,13 @@ bool BaseReq::MergePartialFromCodedStream(
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required bytes sesKey = 1;
+      // required uint32 sesKey = 1;
       case 1: {
-        if (tag == 10) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
-                input, this->mutable_seskey()));
+        if (tag == 8) {
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
+                 input, &seskey_)));
+          set_has_seskey();
         } else {
           goto handle_unusual;
         }
@@ -284,10 +289,9 @@ failure:
 void BaseReq::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // @@protoc_insertion_point(serialize_start:account.BaseReq)
-  // required bytes sesKey = 1;
+  // required uint32 sesKey = 1;
   if (has_seskey()) {
-    ::google::protobuf::internal::WireFormatLite::WriteBytesMaybeAliased(
-      1, this->seskey(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteUInt32(1, this->seskey(), output);
   }
 
   // required uint32 accId = 2;
@@ -305,11 +309,9 @@ void BaseReq::SerializeWithCachedSizes(
 ::google::protobuf::uint8* BaseReq::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // @@protoc_insertion_point(serialize_to_array_start:account.BaseReq)
-  // required bytes sesKey = 1;
+  // required uint32 sesKey = 1;
   if (has_seskey()) {
-    target =
-      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
-        1, this->seskey(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(1, this->seskey(), target);
   }
 
   // required uint32 accId = 2;
@@ -329,18 +331,18 @@ int BaseReq::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required bytes sesKey = 1;
-    if (has_seskey()) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::BytesSize(
-          this->seskey());
-    }
-
     // required uint32 accId = 2;
     if (has_accid()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::UInt32Size(
           this->accid());
+    }
+
+    // required uint32 sesKey = 1;
+    if (has_seskey()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::UInt32Size(
+          this->seskey());
     }
 
   }
@@ -370,11 +372,11 @@ void BaseReq::MergeFrom(const ::google::protobuf::Message& from) {
 void BaseReq::MergeFrom(const BaseReq& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_seskey()) {
-      set_seskey(from.seskey());
-    }
     if (from.has_accid()) {
       set_accid(from.accid());
+    }
+    if (from.has_seskey()) {
+      set_seskey(from.seskey());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -400,8 +402,8 @@ bool BaseReq::IsInitialized() const {
 
 void BaseReq::Swap(BaseReq* other) {
   if (other != this) {
-    std::swap(seskey_, other->seskey_);
     std::swap(accid_, other->accid_);
+    std::swap(seskey_, other->seskey_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
