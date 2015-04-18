@@ -14,16 +14,20 @@ using namespace netio;
 using namespace std;
 
 class UdpPushProxy {
+  enum { TimerInterval = 100 };
+  
   typedef shared_ptr<LooperPool<MultiplexLooper> > SpLooperPool;
   typedef FLNPack::MsgType::CmdType CmdType;  
   typedef NetPackDispatcher<FLNPack, UdpSource> UdpDispatcher;
   typedef shared_ptr<Session<TcpSource> > SpSession;
  public:
-  UdpPushProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expired) :
+  UdpPushProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expireMS) :
       _loopPool(loopers),
       _spUdpEpt(new UdpEndpoint(_loopPool->getLooper(), lport, 1500)),
-      _sm(_loopPool->getLooper(), expired),
-      _dispatcher()
+      _sm(),
+      _dispatcher(),
+      _expireMS(expireMS),
+      _timer(_loopPool->getLooper(), TimerInterval, expireMS / TimerInterval)      
   {
     _spUdpEpt->setNewMessageHandler(std::bind(&UdpPushProxy::onNewMessage, this, placeholders::_1, placeholders::_2, placeholders::_3));
     _dispatcher.registerHandler(std::bind(&UdpPushProxy::updateSession, this, placeholders::_1, placeholders::_2));
@@ -31,12 +35,12 @@ class UdpPushProxy {
 
   void startWork() {
     _spUdpEpt->attach();
-    _sm.enableIdleKick();
+    _timer.attach();
   }
   
   void stopWork() {
     _spUdpEpt->attach();
-    _sm.disableIdleKick();
+    _timer.detach();
   }
 
   void registerHandler(const UdpDispatcher::Handler& handler) {
@@ -62,9 +66,6 @@ class UdpPushProxy {
   }
 
   void updateSession(const SpPeerMessage& msg, const UdpSource& src) {
-    COGI(" ============ ");
-    COGI("msg proto=%d versoin=%d seq=%d, cmd=%d, content=%s", msg->_proto, msg->_version, msg->_seq, msg->_cmd, msg->_buffer->readablePtr());
-    COGI(" ============ ");
   }
   
   SpLooperPool _loopPool;
@@ -72,6 +73,9 @@ class UdpPushProxy {
 
   SessionManager<Session<UdpSource> > _sm;
   UdpDispatcher _dispatcher;
+  
+  uint32_t _expireMS;  
+  TimerWrap<HashedWheelTimer> _timer;  
 };
 
 

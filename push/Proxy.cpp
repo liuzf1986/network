@@ -12,32 +12,6 @@
 
 using namespace netio;
 
-// class TcpPushProxy : public TcpProxy {
-//  public:
-//   TcpPushProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expired) :
-//       TcpProxy(loopers, lport, expired)
-//   {
-//     registerHandler(std::bind(&TcpPushProxy::sessionHandler, this,
-//                               std::placeholders::_1,
-//                               std::placeholders::_2));
-//   }
-  
-//   TcpPushProxy(size_t threadCount, uint16_t lport, uint32_t expired) :
-//       TcpProxy(threadCount, lport, expired)
-//   {
-//     registerHandler(std::bind(&TcpPushProxy::sessionHandler, this,
-//                               std::placeholders::_1,
-//                               std::placeholders::_2));    
-//   }
-//  private:
-//   void sessionHandler(SpPeerMessage& msg, TcpSource& src) {
-//     COGI(" ============ ");
-//     COGI("msg proto=%d versoin=%d seq=%d, cmd=%d, content=%s", msg->_proto, msg->_version, msg->_seq, msg->_cmd, msg->_buffer->readablePtr());
-//     COGI(" ============ ");
-//   }
-// };
-
-
 static Daemon* gDaemon;
 static TcpPushProxy* gTcpProxy;
 static UdpPushProxy* gUdpProxy;
@@ -50,10 +24,10 @@ void onTerminate(int signo) {
 
 int main(int argc, char *argv[])
 {
+  //  g_inner_logger.setLogLevel(LEVEL_INFO);  
   shared_ptr<LooperPool<MultiplexLooper> > spLoopers(new LooperPool<MultiplexLooper>(5));
-  
   gDaemon = new Daemon();
-  gTcpProxy = new TcpPushProxy(spLoopers, 3002, 150 * 1000);
+  gTcpProxy = new TcpPushProxy(spLoopers, 3002, 10 * 1000);
   gDaemon->init(onTerminate);
 
   UdpEndpoint udpChannel(spLoopers->getLooper(), 3305, 1500);
@@ -63,14 +37,4 @@ int main(int argc, char *argv[])
   gDaemon->startWork();
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
 

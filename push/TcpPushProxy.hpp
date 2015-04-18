@@ -28,61 +28,35 @@ using namespace std;
 
 class TcpPushProxy {
  protected:
+  enum { TimerInterval = 100 };
+  
   typedef shared_ptr<LooperPool<MultiplexLooper> > SpLooperPool;
 
   typedef FLNPack::MsgType::CmdType CmdType;  
   typedef NetPackDispatcher<FLNPack, TcpSource> TcpDispatcher;
   typedef Session<TcpSource> TcpSession;
   typedef shared_ptr<TcpSession> SpTcpSession;
+  typedef shared_ptr<HashedWheelTimeout> SpWheelTimeout;    
  public:
 
-  TcpPushProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expired) :
-      _loopPool(loopers),
-      _server(lport, _loopPool),
-      _sm(_loopPool->getLooper(), expired),
-      _dispatcher()      
-  {
-    _server.setConnectionHandler(std::bind(&TcpPushProxy::onNewConnection, this, std::placeholders::_1));
-    _server.setMessageHandler(std::bind(&TcpPushProxy::onNewMessage, this, placeholders::_1, placeholders::_2));
-    _dispatcher.registerHandler(std::bind(&TcpPushProxy::updateSession, this, placeholders::_1, placeholders::_2));
-  }
-  
-  TcpPushProxy(size_t threadCount, uint16_t lport, uint32_t expired) :
-      _loopPool(new LooperPool<MultiplexLooper>(threadCount)),
-      _server(lport, _loopPool),
-      _sm(_loopPool->getLooper(), expired),
-      _dispatcher()      
-  {
-    _server.setConnectionHandler(std::bind(&TcpPushProxy::onNewConnection, this, std::placeholders::_1));
-    _server.setMessageHandler(std::bind(&TcpPushProxy::onNewMessage, this, placeholders::_1, placeholders::_2));
-    _dispatcher.registerHandler(std::bind(&TcpPushProxy::updateSession, this, placeholders::_1, placeholders::_2));    
-  }
+  TcpPushProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expireMS);
+  TcpPushProxy(size_t threadCount, uint16_t lport, uint32_t expireMS);
 
-  void startWork() {
-    _server.startWork();
-    _sm.enableIdleKick();
-  }
-  
-  void stopWork() {
-    _server.stopWork();
-    _sm.disableIdleKick();
-  }
+  /** 
+   * work controller
+   */
+  void startWork();
+  void stopWork();
 
-  void registerHandler(const TcpDispatcher::Handler& handler) {
-    _dispatcher.registerHandler(handler);
-  }
-
-  void registerHandler(TcpDispatcher::Handler&& handler) {
-    _dispatcher.registerHandler(std::move(handler));
-  }
-
-  void registerHandler(CmdType& cmd, const TcpDispatcher::Handler& callback) {
-    _dispatcher.registerHandler(cmd, callback);
-  }
-  
-  void registerHandler(CmdType& cmd, TcpDispatcher::Handler&& callback) {
-    _dispatcher.registerHandler(cmd, std::move(callback));
-  }
+  /** 
+   * register handlers for dispatcher
+   * 
+   * @param handler 
+   */
+  void registerHandler(const TcpDispatcher::Handler& handler);
+  void registerHandler(TcpDispatcher::Handler&& handler);
+  void registerHandler(CmdType& cmd, const TcpDispatcher::Handler& callback);
+  void registerHandler(CmdType& cmd, TcpDispatcher::Handler&& callback);
 
  private:
   /** 
@@ -91,7 +65,7 @@ class TcpPushProxy {
    * @param connection 
    */
   void onNewConnection(SpTcpConnection& connection) {
-    FOGI("TcpPushProxy connection establish, remoteaddr=%s ", connection->getPeerAddr().strIpPort().c_str());
+    LOGI(LOG_NETIO_TAG, "%s TcpPushProxy new connection", connection->strInfo());
     connection->attach();
   }
 
@@ -106,22 +80,27 @@ class TcpPushProxy {
     _dispatcher.dispatch(buffer, source);
   }
 
-  void updateSession(const SpPeerMessage& msg, const TcpSource& src) {
-    if(COMM_PKT_PING_REQUEST == msg->_cmd) {
-      account::PingRequest pingReq;
-      bool ret = pingReq.ParseFromArray(msg->_buffer->readablePtr(), msg->_buffer->readableSize());
-      if(true == ret) {
-        uint64_t cid = TcpSession::genConnectId(src);
-        SpTcpSession spSession = _sm.findSessionByCid(cid);
+  /** 
+   * update session idle time
+   * 
+   * @param spSession 
+   */
+  void touchSession(const SpTcpSession& spSession);
 
-        if(nullptr != spSession) {
-          _sm.touchSession(spSession);
-        } else {
-          _sm.addSession(SpTcpSession(new TcpSession(pingReq.basereq().accid(), pingReq.basereq().seskey(), src)));
-        }
-      }
-    }
-  }
+  /** 
+   * idle session clean
+   * 
+   * @param spSession 
+   */
+  void removeSession(const SpTcpSession& spSession);
+
+  /** 
+   * receive data will trigger update session.
+   * 
+   * @param msg 
+   * @param src 
+   */
+  void updateSession(const SpPeerMessage& msg, const TcpSource& src);
   
   SpLooperPool _loopPool;
   TcpServer _server;
@@ -129,9 +108,41 @@ class TcpPushProxy {
   // session and dispatcher is logical reference, it will real imply in subclass.
   SessionManager<TcpSource> _sm;
   TcpDispatcher _dispatcher;
+  uint32_t _expireMS;  
+  TimerWrap<HashedWheelTimer> _timer;
 };
 
 
+inline void TcpPushProxy::updateSession(const SpPeerMessage& msg, const TcpSource& src) {
+  if(COMM_PKT_PING_REQUEST == msg->_cmd) {
+    account::PingRequest pingReq;
+    bool ret = pingReq.ParseFromArray(msg->_buffer->readablePtr(), msg->_buffer->readableSize());
+    if(true == ret) {
+      uint64_t cid = TcpSession::genConnectId(src);
+      SpTcpSession spSession = _sm.findSessionByCid(cid);
+
+      if(nullptr != spSession) {
+        touchSession(spSession);
+      } else {
+        spSession = SpTcpSession(new TcpSession(pingReq.basereq().accid(), pingReq.basereq().seskey(), src));
+        _sm.addSession(spSession);
+        touchSession(spSession);
+      }
+    }
+  }
+}
+
+inline void TcpPushProxy::removeSession(const SpTcpSession& spSession) {
+  _server.removeConnection(spSession->getSource().getConnection());
+  _sm.removeSession(spSession);
+}
+
+inline void TcpPushProxy::touchSession(const SpTcpSession& spSession) {
+  auto rmfunc = std::bind(&TcpPushProxy::removeSession, this, spSession);
+  SpWheelTimeout timeoutPtr = _timer.addTimeout(rmfunc, _expireMS);
+  spSession->resetTimeout(timeoutPtr);
+  spSession->touch();    
+}
 
 
 

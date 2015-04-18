@@ -11,7 +11,7 @@ LDFLAGS=-lprotobuf -pthread -lrt -lnetio
 
 vpath %.hpp ../netio/include
 
-SRVOBJS=Proxy.o common.pb.o
+SRVOBJS=TcpPushProxy.o common.pb.o Proxy.o
 CLIOBJS=Client.o common.pb.o
 
 SRVTRG=proxy
