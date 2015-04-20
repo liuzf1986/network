@@ -65,7 +65,7 @@ class TcpPushProxy {
    * @param connection 
    */
   void onNewConnection(SpTcpConnection& connection) {
-    LOGI(LOG_NETIO_TAG, "%s TcpPushProxy new connection", connection->strInfo());
+    LOGI("tpp", "%s new connection", connection->strInfo());
     connection->attach();
   }
 
