@@ -28,15 +28,12 @@ using namespace std;
 
 class TcpPushProxy {
  protected:
-  enum { TimerInterval = 100 };
-  
   typedef shared_ptr<LooperPool<MultiplexLooper> > SpLooperPool;
-
   typedef FLNPack::MsgType::CmdType CmdType;  
   typedef NetPackDispatcher<FLNPack, TcpSource> TcpDispatcher;
   typedef Session<TcpSource> TcpSession;
   typedef shared_ptr<TcpSession> SpTcpSession;
-  typedef shared_ptr<HashedWheelTimeout> SpWheelTimeout;    
+
  public:
 
   TcpPushProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expireMS);
@@ -70,6 +67,21 @@ class TcpPushProxy {
   }
 
   /** 
+   * handler by conenction reset by peer
+   * 
+   * @param connection 
+   */
+  void onResetConnection(const SpTcpConnection& connection, int cause) {
+    uint64_t cid = TcpSession::genConnectId(TcpSource(connection));
+    SpTcpSession spSession = _sm.findSessionByCid(cid);
+
+    if(nullptr != spSession) {
+      spSession->cancelTimeout();
+      _sm.removeSession(spSession);
+    }
+  }
+
+  /** 
    * adapter both TcpServer/UdpEndpoint for Dispatcher 
    * 
    * @param conn 
@@ -81,18 +93,11 @@ class TcpPushProxy {
   }
 
   /** 
-   * update session idle time
-   * 
-   * @param spSession 
-   */
-  void touchSession(const SpTcpSession& spSession);
-
-  /** 
    * idle session clean
    * 
    * @param spSession 
    */
-  void removeSession(const SpTcpSession& spSession);
+  void onSessionRemove(const SpTcpSession& spSession);
 
   /** 
    * receive data will trigger update session.
@@ -100,7 +105,7 @@ class TcpPushProxy {
    * @param msg 
    * @param src 
    */
-  void updateSession(const SpPeerMessage& msg, const TcpSource& src);
+  void processHeartbeatReq(const SpPeerMessage& msg, const TcpSource& src);
   
   SpLooperPool _loopPool;
   TcpServer _server;
@@ -108,48 +113,22 @@ class TcpPushProxy {
   // session and dispatcher is logical reference, it will real imply in subclass.
   SessionManager<TcpSource> _sm;
   TcpDispatcher _dispatcher;
-  uint32_t _expireMS;  
-  TimerWrap<HashedWheelTimer> _timer;
 };
 
 
-inline void TcpPushProxy::updateSession(const SpPeerMessage& msg, const TcpSource& src) {
+inline void TcpPushProxy::processHeartbeatReq(const SpPeerMessage& msg, const TcpSource& src) {
   if(COMM_PKT_PING_REQUEST == msg->_cmd) {
     account::PingRequest pingReq;
     bool ret = pingReq.ParseFromArray(msg->_buffer->readablePtr(), msg->_buffer->readableSize());
-    if(true == ret) {
-      uint64_t cid = TcpSession::genConnectId(src);
-      SpTcpSession spSession = _sm.findSessionByCid(cid);
 
-      if(nullptr != spSession) {
-        touchSession(spSession);
-      } else {
-        spSession = SpTcpSession(new TcpSession(pingReq.basereq().accid(), pingReq.basereq().seskey(), src));
-        _sm.addSession(spSession);
-        touchSession(spSession);
-      }
+    if(true == ret) {
+      LOGI("tpp", "%s heart beat uin=%d, sk=%d, seq=%d", src.getPeerInfo(), pingReq.basereq().accid(), pingReq.basereq().seskey(), msg->_seq);       
+      _sm.handlerHeartbeatReq(src, pingReq.basereq().accid(),  pingReq.basereq().seskey(), msg->_seq);
     }
   }
 }
 
-inline void TcpPushProxy::removeSession(const SpTcpSession& spSession) {
+inline void TcpPushProxy::onSessionRemove(const SpTcpSession& spSession) {
   _server.removeConnection(spSession->getSource().getConnection());
-  _sm.removeSession(spSession);
 }
-
-inline void TcpPushProxy::touchSession(const SpTcpSession& spSession) {
-  auto rmfunc = std::bind(&TcpPushProxy::removeSession, this, spSession);
-  SpWheelTimeout timeoutPtr = _timer.addTimeout(rmfunc, _expireMS);
-  spSession->resetTimeout(timeoutPtr);
-  spSession->touch();    
-}
-
-
-
-
-
-
-
-
-
 

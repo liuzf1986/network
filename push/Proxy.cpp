@@ -24,7 +24,7 @@ void onTerminate(int signo) {
 
 int main(int argc, char *argv[])
 {
-  //g_inner_logger.setLogLevel(LEVEL_INFO);  
+  g_inner_logger.setLogLevel(LEVEL_INFO);  
   shared_ptr<LooperPool<MultiplexLooper> > spLoopers(new LooperPool<MultiplexLooper>(5));
   gDaemon = new Daemon();
   gTcpProxy = new TcpPushProxy(spLoopers, 3002, 10 * 1000);

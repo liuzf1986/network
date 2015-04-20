@@ -32,7 +32,12 @@ int main(int argc, char *argv[])
   
   // SpVecBuffer buffer = FLNPack::writeMessage(FLNPProto_PROTOBUF, 1, 0, 100,
   //                                            "hello", strlen("hello"));
-  connection->send(buffer);
+
+  for(int i = 0; i < 3; i ++) {
+    connection->send(buffer);
+    sleep(6);
+  }
+
 
   sleep(10000);
   tcpClient->stopWork();

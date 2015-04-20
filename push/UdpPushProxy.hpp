@@ -24,10 +24,8 @@ class UdpPushProxy {
   UdpPushProxy(const SpLooperPool& loopers, uint16_t lport, uint32_t expireMS) :
       _loopPool(loopers),
       _spUdpEpt(new UdpEndpoint(_loopPool->getLooper(), lport, 1500)),
-      _sm(),
-      _dispatcher(),
-      _expireMS(expireMS),
-      _timer(_loopPool->getLooper(), TimerInterval, expireMS / TimerInterval)      
+      _sm(loopers->getLooper(), expireMS),
+      _dispatcher()
   {
     _spUdpEpt->setNewMessageHandler(std::bind(&UdpPushProxy::onNewMessage, this, placeholders::_1, placeholders::_2, placeholders::_3));
     _dispatcher.registerHandler(std::bind(&UdpPushProxy::updateSession, this, placeholders::_1, placeholders::_2));
@@ -35,12 +33,12 @@ class UdpPushProxy {
 
   void startWork() {
     _spUdpEpt->attach();
-    _timer.attach();
+    _sm.startWork();
   }
   
   void stopWork() {
+    _sm.stopWork();
     _spUdpEpt->attach();
-    _timer.detach();
   }
 
   void registerHandler(const UdpDispatcher::Handler& handler) {
@@ -73,9 +71,6 @@ class UdpPushProxy {
 
   SessionManager<Session<UdpSource> > _sm;
   UdpDispatcher _dispatcher;
-  
-  uint32_t _expireMS;  
-  TimerWrap<HashedWheelTimer> _timer;  
 };
 
 
