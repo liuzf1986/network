@@ -1,3 +1,6 @@
 [submodule "netio"]
 	path = netio
 	url = https://www.github.com/liuzf1986/netio.git
+[submodule "http/http-parser"]
+	path = http/http-parser
+	url = https://github.com/joyent/http-parser.git
