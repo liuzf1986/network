@@ -33,7 +33,7 @@ int message_complete_callback(http_parser* parser);
 
 class HttpServer {
   enum { TimerInterval = 100 };    
-  typedef shared_ptr<LooperPool<MultiplexLooper> > SpLoopPool;
+  typedef shared_ptr<LooperPool<MultiplexLooper> > SpLooperPool;
   typedef shared_ptr<HttpSession> SpSession;
   typedef std::map<int, SpSession> SessionMap;
   typedef shared_ptr<HashedWheelTimeout> SpTimeout;
@@ -45,14 +45,8 @@ class HttpServer {
       _timer(loopPool->getLooper(), TimerInterval, _keepAliveMS / TimerInterval),
       _sessionMap()
   {
-    _server.setMessageHandler(std::bind(&HttpServer::onReceive, this, placeholders::_1, placeholders::_2));
     _server.setConnectionHandler(std::bind(&HttpServer::onNewConnection, this, placeholders::_1));
-    http_parser_settings_init(&_parserSetting);
-    _parserSetting.on_url = url_callback;
-    _parserSetting.on_body = body_callback;
-    _parserSetting.on_status = status_callback;
-    _parserSetting.on_header_value = header_value_callback;
-
+    setupParserSetting();
   }
 
   void startWork() {
@@ -67,18 +61,31 @@ class HttpServer {
   
   
  private:
+  void setupParserSetting() {
+    http_parser_settings_init(&_parserSetting);
+    
+    _parserSetting.on_message_begin = message_begin_callback;
+    _parserSetting.on_url = url_callback;
+    _parserSetting.on_status = status_callback;
+    _parserSetting.on_header_field = header_field_callback;
+    _parserSetting.on_header_value = header_value_callback;
+    _parserSetting.on_headers_complete = headers_complete_callback;
+    _parserSetting.on_body = body_callback;
+    _parserSetting.on_message_complete = message_complete_callback;
+  }
+  
   /** 
    * New connection trigger by tcpsrever, create and save new session.
    * 
    * @param connection 
    */
   void onNewConnection(SpTcpConnection& connection) {
-    SpSession spSession = SpSession(new HttpSession(connection));
+    SpSession spSession = SpSession(new HttpSession(connection, &_parserSetting));
     _sessionMap.insert(std::pair<int, SpSession>(spSession->genSessionId(), spSession));
     SpTimeout timeout = _timer.addTimeout(std::bind(&HttpServer::removeSession, this, spSession->genSessionId()), _idleTimeoutMS);
     spSession->resetTimeout(timeout);
 
-    connection->attach();
+    spSession->active();
   }
 
   /** 
@@ -89,9 +96,10 @@ class HttpServer {
   void removeSession(int sid) {
     auto iter = _sessionMap.find(sid);
     if(iter != _sessionMap.end()) {
-      _server.removeConnection((*iter).second);
+      (*iter).second->deactive();
+      _server.removeConnection((*iter).second->getConnection());
+      _sessionMap.erase(iter);      
     }
-    _sessionMap.erase(sid);
   }
   
 
