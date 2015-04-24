@@ -52,7 +52,7 @@ class HttpServer {
     _parserSetting.on_body = body_callback;
     _parserSetting.on_status = status_callback;
     _parserSetting.on_header_value = header_value_callback;
-    xxxxxxxxxxxxxx
+
   }
 
   void startWork() {
@@ -77,6 +77,8 @@ class HttpServer {
     _sessionMap.insert(std::pair<int, SpSession>(spSession->genSessionId(), spSession));
     SpTimeout timeout = _timer.addTimeout(std::bind(&HttpServer::removeSession, this, spSession->genSessionId()), _idleTimeoutMS);
     spSession->resetTimeout(timeout);
+
+    connection->attach();
   }
 
   /** 

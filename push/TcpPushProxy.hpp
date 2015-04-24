@@ -30,8 +30,6 @@ class TcpPushProxy : public PushProxy<FLNPack, TcpSource>
    */
   void setupTcp() {
     _server.setConnectionHandler(std::bind(&TcpPushProxy::onConnectionOpen, this, std::placeholders::_1));
-    _server.setConnectionCloseHandler(std::bind(&TcpPushProxy::onConnectionClose, this, placeholders::_1, placeholders::_2));
-    _server.setMessageHandler(std::bind(&TcpPushProxy::onNewMessage, this, placeholders::_1, placeholders::_2));
     _sm.setSessionRemoveHandler(std::bind(&TcpPushProxy::onSessionRemove, this, placeholders::_1));
   }
 
@@ -40,6 +38,8 @@ class TcpPushProxy : public PushProxy<FLNPack, TcpSource>
    */
   void onConnectionOpen(const SpTcpConnection& connection) {
     LOGI("tpp", "%s new connection", connection->strInfo());
+    connection->setNewMessageHandler(std::bind(&TcpPushProxy::onNewMessage, this, placeholders::_1, placeholders::_2));
+    connection->setCloseHandler(std::bind(&TcpPushProxy::onConnectionClose, this, placeholders::_1, placeholders::_2));    
     connection->attach();
   }
 

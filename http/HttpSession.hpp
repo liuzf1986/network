@@ -20,13 +20,18 @@ class HttpSession {
       _timeout()
   {
     http_parser_init(&_parser, HTTP_REQUEST);
-
-    
     _spConn->setNewMessageHandler(std::bind(&HttpSession::onReceive, this, placeholders::_1, placeholders::_2));
-    _spConn->attach();
   }
 
   ~HttpSession() {
+  }
+
+  void active() {
+    _parser.data = this;
+    _spConn->attach();
+  }
+
+  void deactive() {
     _spConn->detach();
   }
 
@@ -62,9 +67,11 @@ class HttpSession {
     if(0 != _parser.http_errno) {
       LOGW("hts", "%s parsed failed, str=%s", connection->strInfo(), http_errno_name(_parser.http_errno));
     } else {
-      _parseOffset += parsed; 
+      _parseOffset += parsed;
     }
   }
+
+  
 
  private:
   // we mark read when message is complete to garentee buffer is continuos,
@@ -73,25 +80,7 @@ class HttpSession {
   SpTcpConnection _spConn;
   http_parser _parser;
   http_parser_url _parserUrl;
-
+  
   WpTimeout _timeout;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
