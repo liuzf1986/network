@@ -1,96 +1,77 @@
+
+
 #include "HttpServer.hpp"
+#include "VecBuffer.hpp"
 #include "Utils.hpp"
 
+const SpVecData HttpServer::_400_VecData = HttpServer::genResponse_400();
+const SpVecData HttpServer::_401_VecData = HttpServer::genResponse_401();
+const SpVecData HttpServer::_403_VecData = HttpServer::genResponse_403();
+const SpVecData HttpServer::_404_VecData = HttpServer::genResponse_404();
 
-
-int message_begin_callback(http_parser* parser) {
-  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
-  ASSERT(nullptr != sessionPtr);
-  sessionPtr->updateParseState(ParseState::ParseHeader);
-  return 0;
+HttpServer::HttpServer(uint16_t port, SpLooperPool loopPool, uint32_t keepAliveMS, uint32_t idleTimeoutMS) :
+    _keepAliveMS(keepAliveMS),
+    _idleTimeoutMS(idleTimeoutMS),
+    _server(port, loopPool),
+    _timer(loopPool->getLooper(), TimerInterval, _keepAliveMS / TimerInterval),
+    _sessionMap()
+{
+  _server.setConnectionHandler(std::bind(&HttpServer::onNewConnection, this, placeholders::_1));
 }
 
-int url_callback(http_parser* parser, const char *at, size_t length) {
-  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
-  ASSERT(nullptr != sessionPtr);
-  if(sessionPtr->onUrl(at, length)) {
-    
-  }
-  
-  char temp[100] = {0};
-  strncpy(temp, at, length);
-  LOGI("hp", "%s ,%s", __func__,temp);
-  return 0;
+void HttpServer::startWork() {
+  _timer.attach();
+  _server.startWork();
 }
 
-int status_callback(http_parser* parser, const char *at, size_t length) {
-  char temp[100] = {0};
-  strncpy(temp, at, length);
-  LOGI("hp", "%s ,%s", __func__,temp);  
-  return 0;  
+void HttpServer::stopWork() {
+  _server.stopWork();
+  _timer.detach();
 }
 
-int header_field_callback(http_parser* parser, const char *at, size_t length) {
-  char temp[100] = {0};
-  strncpy(temp, at, length);
-  LOGI("hp", "%s ,%s", __func__,temp);  
-  return 0;  
+void HttpServer::setMessageHandler(const HttpRequestHandler& handler) {
+  _requestHandler = handler;
 }
 
-int header_value_callback(http_parser* parser, const char *at, size_t length) {
-  char temp[100] = {0};
-  strncpy(temp, at, length);
-  LOGI("hp", "%s ,%s", __func__,temp);  
-  return 0;  
+void HttpServer::setMessageHandler(HttpRequestHandler&& handler) {
+  _requestHandler = std::move(handler);
 }
 
-int headers_complete_callback(http_parser* parser) {
-  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
-  ASSERT(nullptr != sessionPtr);
-  sessionPtr->updateParseState(ParseState::ParseBody);
-  return 0;  
+SpVecData HttpServer::genResponse_400() {
+  static const char* errRsp = "HTTP/1.1 400 Bad Request\r\n"
+      "Content-Length: 10\r\n\r\n"
+      "Failed\r\n\r\n";
+  SpVecData spVecData = SpVecData(new VecData(strlen(errRsp) + 1));
+  strcpy(reinterpret_cast<char*>(spVecData->data()), errRsp);
+  return spVecData;
 }
 
-int body_callback(http_parser* parser, const char *at, size_t length) {
-  char temp[100] = {0};
-  strncpy(temp, at, length);
-  LOGI("hp", "%s ,%s", __func__,temp);  
-  return 0;  
+SpVecData HttpServer::genResponse_401() {
+  static const char* errRsp = "HTTP/1.1 401 Unauthorized\r\n"
+      "Content-Length: 10\r\n\r\n"
+      "Failed\r\n\r\n";
+  SpVecData spVecData = SpVecData(new VecData(strlen(errRsp) + 1));
+  strcpy(reinterpret_cast<char*>(spVecData->data()), errRsp);
+  return spVecData;  
 }
 
-int test_count = 0;
-const char* test_rsp = "HTTP/1.1 200 OK\r\n"
-    "Content-Type: text/html; charset=UTF-8\r\n"
-    "Content-Length: 13\r\n"
-    "Proxy-Connection: close\r\n"
-    "Date: Thu, 31 Dec 2009 20:55:48 +0000\r\n"
-    "\r\n"
-    "hello world";
-
-int message_complete_callback(http_parser* parser) {
-  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
-  SpVecBuffer buffer = SpVecBuffer(new VecBuffer(200));
-  sprintf((char*)buffer->writtablePtr(), "%s %d", test_rsp, test_count);
-  
-  buffer->markWrite(strlen((char*)buffer->writtablePtr()));
-
-  ++test_count;
-  
-  ASSERT(nullptr != sessionPtr);
-  sessionPtr->updateParseState(ParseState::ParseDone);
-  sessionPtr->getConnection()->send(buffer);
-  return 0;  
+SpVecData HttpServer::genResponse_403() {
+  static const char* errRsp = "HTTP/1.1 403 Forbidden\r\n"
+      "Content-Length: 10\r\n\r\n"
+      "Failed\r\n\r\n";
+  SpVecData spVecData = SpVecData(new VecData(strlen(errRsp) + 1));
+  strcpy(reinterpret_cast<char*>(spVecData->data()), errRsp);
+  return spVecData;  
 }
 
-
-
-
-
-
-
-
-
-
+SpVecData HttpServer::genResponse_404() {
+  static const char* errRsp = "HTTP/1.1 404 Not Found\r\n"
+      "Content-Length: 10\r\n\r\n"
+      "Failed\r\n\r\n";
+  SpVecData spVecData = SpVecData(new VecData(strlen(errRsp) + 1));
+  strcpy(reinterpret_cast<char*>(spVecData->data()), errRsp);  
+  return spVecData;  
+}
 
 
 

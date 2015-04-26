@@ -3,8 +3,8 @@ CC=g++
 LIBDIR=../netio
 LIB=$(LIBDIR)/libnetio.a
 LIBINC=-I$(LIBDIR)/include -I./http-parser
-CFLAGS =-c -O3 $(LIBINC)
-CCFLAGS=-c -std=c++11 -O3 $(LIBINC)
+CFLAGS =-c -g $(LIBINC)
+CCFLAGS=-c -std=c++11 -g $(LIBINC)
 #LDFLAGS=-Wl,--no-as-needed -lpthread -lrt -lnetio
 LDFLAGS=-pthread -lrt -lnetio
 

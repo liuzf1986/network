@@ -1,26 +1,29 @@
 #pragma once
 
 #include <functional>
+#include <string>
+#include <strings.h>
 
 #include "http_parser.h"
 #include "TcpConnection.hpp"
 #include "HashedWheelTimer.hpp"
 #include "Logger.hpp"
+#include "Utils.hpp"
+#include "HttpMessage.hpp"
 
 using namespace netio;
 using namespace std;
 
-enum class ParseState {
-  ParseHeader,
-  ParseBody,
-  ParseDone
-};
+
 
 class HttpSession {
   typedef shared_ptr<HashedWheelTimeout> SpTimeout;
   typedef weak_ptr<HashedWheelTimeout> WpTimeout;
+  
+  typedef function<void(HttpSession&, const HttpMessageHolder&)> MessageHandler;
+  typedef function<void(HttpSession&, int)> ErrorHandler;
  public:
-  HttpSession(const SpTcpConnection& connection, http_parser_settings* settingPtr);
+  HttpSession(const SpTcpConnection& connection);
   ~HttpSession();
 
   void active();
@@ -31,7 +34,7 @@ class HttpSession {
    * We use fd as session id.
    * @return 
    */
-  uint64_t genSessionId() const {
+  int genSessionId() const {
     return _spConn->getFd();
   }
 
@@ -54,58 +57,134 @@ class HttpSession {
    * @param buffer 
    */
   void onReceive(SpTcpConnection connection, SpVecBuffer& buffer) {
-    size_t parsed = http_parser_execute(&_parser,
-                                        _settingPtr,
-                                        reinterpret_cast<char*>(buffer->readablePtr() + _parseOffset),
-                                        buffer->readableSize() - _parseOffset);
-    if(0 != _parser.http_errno) {
-      LOGW("hts", "%s parsed failed, str=%s", connection->strInfo(), http_errno_name(static_cast<http_errno>(_parser.http_errno)));
+    size_t parsed = _holder.consume(&_setting,
+                                    reinterpret_cast<char*>(buffer->readablePtr() + _parseOffset),
+                                    buffer->readableSize() - _parseOffset);
+
+    if(0 != _holder.getErrno()) {
+      _onError(*this, _holder.getErrno());
     } else {
       _parseOffset += parsed;
-      if(ParseState::ParseDone == _parseState) {
+      if(_holder.isMessageDone()) {
+        _onMessage(*this, _holder);
+        
+        // after message processed, mark buffer readed.
         buffer->markRead(_parseOffset);
         _parseOffset = 0;
-        resetParser();
+        _holder.reset();
       }
     }
   }
 
-  void updateParseState(const ParseState& parseState) {
-    _parseState = parseState;
-  }
-
-  SpTcpConnection& getConnection() {
+  SpTcpConnection getConnection() const {
     return _spConn;
   }
 
-  bool onUrl(const char *buf, size_t buflen) {
-    if(0 == http_parser_parse_url(buf, buflen, 0, &_parserUrl)) {
-      return true;
-    }
-    return false;
+  const HttpMessageHolder& holder() const {
+    return _holder;
+  }
+
+  HttpMessageHolder& holder() {
+    return _holder;
+  }
+
+  void setMessageHandler(const MessageHandler& handler) {
+    _onMessage = handler;
+  }
+
+  void setMessageHandler(MessageHandler&& hanlder) {
+    _onMessage = std::move(hanlder);
+  }
+
+  void setErrorHandler(const ErrorHandler& handler) {
+    _onError = handler;
+  }
+
+  void setErrorHandler(ErrorHandler&& handler) {
+    _onError = std::move(handler);
+  }
+
+  MultiplexLooper* getLooper() const {
+    return _spConn->getLooper();
   }
 
  private:
-  void resetParser() {
-    http_parser_init(&_parser, HTTP_REQUEST);
-    _parser.data = this;
-  }
+  
+  // callbacks for http_parser
+  static http_parser_settings _setting;  
+  static int message_begin_callback(http_parser* parser);
+  static int url_callback(http_parser* parser, const char *at, size_t length);
+  static int status_callback(http_parser* parser, const char *at, size_t length);
+  static int header_field_callback(http_parser* parser, const char *at, size_t length);
+  static int header_value_callback(http_parser* parser, const char *at, size_t length);
+  static int headers_complete_callback(http_parser* parser);
+  static int body_callback(http_parser* parser, const char *at, size_t length);
+  static int message_complete_callback(http_parser* parser);
   
   // we mark read when message is complete to garentee buffer is continuos,
   // so we got appending information _offset to indecate where we have parsed.
   size_t _parseOffset;
-  ParseState _parseState;
-  
+
+  HttpMessageHolder _holder;
   SpTcpConnection _spConn;
-  
-  http_parser _parser;
-  http_parser_url _parserUrl;
-  http_parser_settings* _settingPtr;
-  
   WpTimeout _timeout;
+
+  // session callback
+  MessageHandler _onMessage;
+  ErrorHandler _onError;
 };
 
 
+inline int HttpSession::message_begin_callback(http_parser* parser) {
+  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
+  ASSERT(nullptr != sessionPtr);
+  sessionPtr->holder().setState(ParseState::ParseHeader);
+  return 0;
+}
 
+inline int HttpSession::url_callback(http_parser* parser, const char *at, size_t length) {
+  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
+  ASSERT(nullptr != sessionPtr);
+  return sessionPtr->holder().setUrl(at, length);
+}
+
+inline int HttpSession::status_callback(http_parser* parser, const char *at, size_t length) {
+  return 0;
+}
+
+inline int HttpSession::header_field_callback(http_parser* parser, const char *at, size_t length) {
+  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
+  ASSERT(nullptr != sessionPtr);
+  sessionPtr->holder().setHeaderField(at, length);
+  return 0;
+}
+
+inline int HttpSession::header_value_callback(http_parser* parser, const char *at, size_t length) {
+  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
+  ASSERT(nullptr != sessionPtr);
+  sessionPtr->holder().setHeaderValue(at, length);
+  return 0;
+}
+
+inline int HttpSession::headers_complete_callback(http_parser* parser) {
+  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
+  ASSERT(nullptr != sessionPtr);
+  sessionPtr->holder().setState(ParseState::ParseBody);
+  return 0;
+}
+
+inline int HttpSession::body_callback(http_parser* parser, const char *at, size_t length) {
+  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
+  ASSERT(nullptr != sessionPtr);
+  sessionPtr->holder().setBody(at, length);
+  return 0;
+}
+
+inline int HttpSession::message_complete_callback(http_parser* parser) {
+  HttpSession* sessionPtr = static_cast<HttpSession*>(parser->data);
+  ASSERT(nullptr != sessionPtr);
+  sessionPtr->holder().setState(ParseState::ParseDone);
+  return 0;    
+}
 
 
