@@ -1,5 +1,10 @@
 #pragma once
 
+#include <string.h>
+
+#include "VecBuffer.hpp"
+
+using namespace netio;
 
 /**
  * @file   ResponseHelper.hpp
@@ -10,13 +15,29 @@
  * 
  * 
  */
-#define RSP_OK_PATTERN                          \
-  "HTTP/1.1 200 OK\r\n"                         \
-  "Connection: close\r\n"                       \
-  "Content-Length: %d\r\n"                      \
-  "\r\n"
-  
+
 
 class ResponseHelper {
-  
+ public:
+  static SpVecBuffer createResponse_200(size_t bodylen);
+  static SpVecBuffer createResponse_200(size_t bodylen, const char* body);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

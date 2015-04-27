@@ -6,6 +6,7 @@
 #include "HttpServer.hpp"
 #include "HttpSession.hpp"
 #include "HttpMessage.hpp"
+#include "ResponseHelper.hpp"
 
 using namespace netio;
 
@@ -30,17 +31,8 @@ bool test_handler(HttpSession& session, const HttpMessageHolder& holder) {
   DBG_URL(FRAGMENT);
   DBG_URL(USERINFO);
 #undef DBG_URL
-  const char* rsp = "HTTP/1.1 200 OK\r\n"                   
-      "Connection: close\r\n"                     
-      "Content-Length: 2\r\n"                     
-      "\r\n"
-      "OK";
-  
-  SpVecBuffer spBuf = SpVecBuffer(new VecBuffer(strlen(rsp)));
-  strncpy(spBuf->writtablePtr(), rsp, spBuf->writtableSize());
-  spBuf->markWrite(spBuf->writtableSize());
-  session.getConnection()->send(spBuf);
-  
+  const char* hello = "hello";
+  session.getConnection()->send(ResponseHelper::createResponse_200(strlen(hello), hello));
   return false;
 }
 

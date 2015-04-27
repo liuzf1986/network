@@ -12,7 +12,7 @@ vpath %.hpp ../netio/include
 
 HTTP_PARSER_LIB=http-parser
 
-SRVOBJS=$(HTTP_PARSER_LIB)/http_parser.o HttpSession.o HttpServer.o main.o
+SRVOBJS=$(HTTP_PARSER_LIB)/http_parser.o HttpSession.o HttpServer.o ResponseHelper.o main.o
 
 SRVTRG=main
 
