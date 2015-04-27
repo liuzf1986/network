@@ -9,10 +9,9 @@ CCFLAGS=-c -std=c++11 -g $(LIBINC)
 LDFLAGS=-pthread -lrt -lnetio
 
 vpath %.hpp ../netio/include
+vpath %.c ./http-parser
 
-HTTP_PARSER_LIB=http-parser
-
-SRVOBJS=$(HTTP_PARSER_LIB)/http_parser.o HttpSession.o HttpServer.o ResponseHelper.o main.o
+SRVOBJS=http_parser.o HttpSession.o HttpServer.o ResponseHelper.o main.o
 
 SRVTRG=main
 
