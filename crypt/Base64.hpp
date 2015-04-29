@@ -1,16 +1,7 @@
 #pragma once
+#include <unistd.h>
 
-#include <string>
-#include <vector>
-
-// ascii uri encode
-
-class UriCodec {
-  
- public:
-  static std::string encode(const std::string& str);
-  static std::string decode(const std::string& str);
-
+class Base64Codec {
   // private:
   /*private calls, we have ensure enough space for output*/
   static size_t getEncodeBufferSize(const char* srcptr, size_t strlen);
@@ -18,6 +9,11 @@ class UriCodec {
   static size_t getDecodeBufferSize(const char* srcptr, size_t strlen);
   static size_t decode(char* dstptr, size_t dstlen, const char* srcptr, size_t strlen);
 };
+
+
+
+
+
 
 
 

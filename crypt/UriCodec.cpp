@@ -115,6 +115,10 @@ std::string UriCodec::encode(const std::string& sSrc) {
   return sResult;
 }
 
+size_t UriCodec::getEncodeBufferSize(const char* srcptr, size_t strlen) {
+  return (strlen * 3) + 1;
+}
+
 size_t UriCodec::encode(char* dstptr, size_t dstlen,const char* srcptr, size_t strlen) {
   const char DEC2HEX[16 + 1] = "0123456789ABCDEF";
   const char* pSrcIndex = srcptr;
@@ -140,6 +144,10 @@ size_t UriCodec::encode(char* dstptr, size_t dstlen,const char* srcptr, size_t s
   *pDstIndex++ = '\0';
 
   return pDstIndex - dstptr;
+}
+
+size_t UriCodec::getDecodeBufferSize(const char *srcptr, size_t strlen) {
+  return strlen + 1;
 }
 
 size_t UriCodec::decode(char* dstptr, size_t dstlen, const char* srcptr, size_t strlen) {
@@ -180,6 +188,12 @@ int main(int argc, char *argv[])
   
   std::string orig = "/hello/coming=workd/";
   size_t enclen;
+
+
+  const char* enced = "http://zh.wikipedia.org/zh-cn/%E7%99%BE%E5%88%86%E5%8F%B7%E7%BC%96%E7%A0%81";
+  UriCodec::decode(temp, sizeof(temp), enced, strlen(enced));
+
+  std::cout << temp << std::endl;
 
 #if 1
   for(int i = 0; i < 10000000; i ++) {
